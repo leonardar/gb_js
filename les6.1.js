@@ -1,14 +1,15 @@
-/*Продолжаем реализовывать модуль корзины:
-Добавлять в объект корзины выбранные товары по клику на кнопке «Купить» 
-без перезагрузки страницы; Привязать к событию покупки товара пересчет корзины 
-и обновление ее внешнего вида.*/
+/*Реализовать страницу корзины:
+Добавить возможность не только смотреть состав корзины, но и редактировать его, обновляя общую 
+стоимость или выводя сообщение «Корзина пуста».
+На странице корзины:
+Сделать отдельные блоки «Состав корзины», «Адрес доставки», «Комментарий»;
+Сделать эти поля сворачиваемыми;
+Заполнять поля по очереди, то есть давать посмотреть состав корзины, внизу 
+которого есть кнопка «Далее». Если нажать ее, сворачивается «Состав корзины» и открывается 
+«Адрес доставки» и так далее.*/
 
-/*let isAdd = false;
-button.addEventListener('mousedown', () => isAdd = true)*/
-
-
-//const eventElement = eventObj.target;
 const b = document.querySelector(".basket");
+
 
 const basket = {
     basketCost: 0,
@@ -16,9 +17,20 @@ const basket = {
     arr: [],
 
     add_product: function (product) {
-        this.arr.push(product);
+        const idx = this.arr.indexOf(product);
+        if (idx != -1) {
+            this.arr[idx].quantity += 1;
+        } else {
+            this.arr.push(product);
+        }
         this.basketQuantity += 1;
         this.basketCost += product.price;
+    },
+    del_product: function (id) {
+
+        this.basketQuantity -= 1;
+        this.basketCost -= this.arr[id].price;
+        this.arr.splice(id, 1);
     },
 
     printer: function () {
@@ -33,6 +45,7 @@ const basket = {
 
 function Products(id, name, price) {
     this.id = id;
+    this.quantity = 1;
     this.name = name;
     this.price = price;
 
@@ -45,19 +58,82 @@ function Products(id, name, price) {
     document.getElementById(buttonId).addEventListener('click', function (e) {
         id = buttonId.substring('button_'.length);
         e.stopPropagation();
-        basket.add_product(arr[id]);
+        basket.add_product(productsArr[id]);
         basket.printer();
     }, true);
 }
 
-const names = ['рыба', 'молоко', 'хлеб', 'сырки', 'сухофрукты', 'личи'];
-const prices = [100, 120, 320, 300, 180, 980];
+const names = ['рыба', 'молоко', 'хлеб', 'сырки', 'сухофрукты', 'личи', 'бананы', 'горох', 'помидоры', 'стейки'];
+const prices = [100, 120, 320, 300, 180, 980, 788, 54, 876, 650];
 
 counter = 0;
 
-let arr = [];
+let productsArr = [];
 
 for (let i = 0; i < names.length && prices.length; i++) {
-    arr.push(new Products(i, names[i], prices[i]));
+    productsArr.push(new Products(i, names[i], prices[i]));
 }
+//-----
+
+const buton_basket = document.querySelector(".buton_basket");
+const modal = document.querySelector(".modal");
+const screen = document.querySelector(".screen");
+
+
+screen.addEventListener('click', function (e) {
+    modal.style.display = "none";
+    screen.style.display = "none";
+}
+)
+
+function drawHtml_products() {
+    const section1 = modal.querySelector(".section1");
+    const table = section1.querySelector(".table");
+    section1.removeChild(table);
+    section1.insertAdjacentHTML("beforeend", `<table class="table" cellpadding="4" cellspacing="1">
+    <tr>
+        <th>Номер</th>
+        <th>Наименование</th>
+        <th>Цена</th>
+        <th>Количество</th>
+        <th>Общая стоимость</th>
+    </tr>
+</table>`)
+
+    basket.arr.forEach(function (prod, i) {
+        drawHtml_product(prod, i);
+    });
+}
+
+function drawHtml_product(prod, i) {
+    let deleteId = "delete_" + i;
+    let html = `<div id = "${i}" class="list">
+        
+   <tr><td class="td">${i + 1}.</td><td class="td">${prod.name}</td><td class="td">${prod.price} руб.</td>
+   <td class="td">${prod.quantity} шт.</td><td class="td">${prod.quantity * prod.price} руб.</td><td class="td">
+   <div id ="${deleteId}" class="delete"><form>
+   <p><input type="button" value=" Удалить "></p>
+</form></div></td></tr>
+        
+    </div>`;
+    const new_table = document.querySelector(".table");
+    new_table.insertAdjacentHTML("beforeend", html);
+
+    document.getElementById(deleteId).addEventListener('click', function (e) {
+        e.stopPropagation();
+        id = deleteId.substring('delete_'.length);
+        basket.del_product(id);
+        drawHtml_products();
+    }, true);
+}
+
+buton_basket.addEventListener('click', function (e) {
+    e.stopPropagation();
+    modal.style.display = "block";
+    screen.style.display = "block";
+    drawHtml_products();
+});
+
 basket.printer();
+
+//<tr><td>${i + 1}.</td><td>${prod.name}</td><td>${prod.price} руб.</td><td>${prod.quantity} шт.</td><td>${prod.quantity * prod.price} руб.</td></tr>
